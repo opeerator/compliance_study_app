@@ -14,6 +14,7 @@ const GameScreen = ({ gameDay }) => {
   const q_icon_sets = ['face-sad-cry','sad-tear','smile-beam','face-grin-wide','face-grin-stars'];
   const [questionAnswers, setQuestionAnswers] = useState(Array(5).fill('')); // Array to store answers to questions
   const timerRef = useRef(null);
+  const timerStarted = useRef(true); // Track if the timer has started
 
   useEffect(() => {
     const fetchData = async () => {
@@ -24,46 +25,55 @@ const GameScreen = ({ gameDay }) => {
   }, []);
 
   useEffect(() => {
-    const itemTimer = setInterval(() => {
-      const newItem = {
-        id: Date.now(), // Unique ID for each item
-        opacity: new Animated.Value(0), // Initial opacity set to 0 for fade-in effect
-        left: getRandomPosition(Dimensions.get('window').width - 50), // Random left position within screen bounds
-        top: getRandomPosition(Dimensions.get('window').height - 50), // Random top position within screen bounds
-        timer: setTimeout(() => {
-          setItems(prevItems => prevItems.filter(item => item.id !== newItem.id));
-        }, 2000), // Remove item after 2 seconds
+    if (timerStarted.current) {
+      const itemTimer = setInterval(() => {
+        const newItem = {
+          id: Date.now(), // Unique ID for each item
+          opacity: new Animated.Value(0), // Initial opacity set to 0 for fade-in effect
+          left: getRandomPosition(Dimensions.get('window').width - 20), // Random left position within screen bounds
+          top: getRandomPosition(Dimensions.get('window').height - 200), // Random top position within screen bounds
+          timer: setTimeout(() => {
+            setItems(prevItems => prevItems.filter(item => item.id !== newItem.id));
+          }, 2000), // Remove item after 2 seconds
+        };
+
+        // Start the fade-in animation
+        Animated.timing(newItem.opacity, {
+          toValue: 1,
+          duration: 500, // Duration of fade-in animation
+          useNativeDriver: true,
+        }).start();
+
+        setItems(prevItems => [...prevItems, newItem]);
+      }, 2000); // Adjust the time as needed
+
+      return () => {
+        clearInterval(itemTimer);
+        items.forEach(item => clearTimeout(item.timer));
       };
-
-      // Start the fade-in animation
-      Animated.timing(newItem.opacity, {
-        toValue: 1,
-        duration: 500, // Duration of fade-in animation
-        useNativeDriver: true,
-      }).start();
-
-      setItems(prevItems => [...prevItems, newItem]);
-    }, 2000); // Adjust the time as needed
-
-    // Start the game timer
-    timerRef.current = setInterval(() => {
-      setProgress(prevProgress => prevProgress + (100 / 120)); // Assuming 120 seconds for the game
-    }, 1000); // Update every second
-
-    // Set a timeout for game over after 2 minutes (120 seconds)
-    const gameOverTimeout = setTimeout(() => {
-      clearInterval(timerRef.current); // Stop the game timer
-      setModalVisible(true); // Show the modal
-    // }, 120000); // 2 minutes in milliseconds
-    }, 500); // 2 minutes in milliseconds
-
-    return () => {
-      clearInterval(itemTimer);
-      clearInterval(timerRef.current);
-      items.forEach(item => clearTimeout(item.timer));
-      clearTimeout(gameOverTimeout);
-    };
+    }
   }, []);
+
+  useEffect(() => {
+    if (timerStarted.current) {
+      // Start the game timer only if it hasn't started before
+      timerRef.current = setInterval(() => {
+        setProgress(prevProgress => prevProgress + (100 / 120)); // Assuming 120 seconds for the game
+      }, 1000); // Update every second
+
+      // Set a timeout for game over after 2 minutes (120 seconds)
+      const gameOverTimeout = setTimeout(() => {
+        clearInterval(timerRef.current); // Stop the game timer
+        setModalVisible(true); // Show the modal
+        timerStarted = false; // Reset timer started flag
+      }, 120000); // 2 minutes in milliseconds
+
+      return () => {
+        clearInterval(timerRef.current);
+        clearTimeout(gameOverTimeout);
+      };
+    }
+  }, [timerStarted.current]);
 
   const getRandomPosition = max => Math.random() * max;
 
@@ -71,6 +81,7 @@ const GameScreen = ({ gameDay }) => {
     setModalVisible(false);
     setProgress(0); // Reset the progress
     setCount(0); // Reset the count
+    timerStarted.current = false; // Reset timer started flag
 
     try {
       const response = await axios.post('your_backend_url/send_game_data', {
@@ -90,10 +101,22 @@ const GameScreen = ({ gameDay }) => {
   const handleItemPress = id => {
     setItems(prevItems => prevItems.filter(item => item.id !== id));
     setCount(prevCount => prevCount + 1);
+    // if (!timerStarted.current) {
+    //   timerStarted.current = true; // Start the timer on first item press
+    // }
+  };
+
+  const setQuestionAnswer = (questionIndex, answer) => {
+    const newAnswers = [...questionAnswers];
+    newAnswers[questionIndex] = answer;
+    setQuestionAnswers(newAnswers);
   };
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
+      <View style={styles.titleCount}>
+        <Text style={styles.countText}>Objects found: {count}</Text>
+      </View>
       <View style={styles.progressContainer}>
         <View style={[styles.progressBar, { width: `${progress}%` }]} />
       </View>
@@ -104,11 +127,10 @@ const GameScreen = ({ gameDay }) => {
             style={[styles.item, { left: item.left, top: item.top, opacity: item.opacity }]}
           >
             <TouchableOpacity onPress={() => handleItemPress(item.id)}>
-              <AntDesign name="smile-circle" size={24} color="black" />
+              <AntDesign name="hearto" size={35} color="#781374" />
             </TouchableOpacity>
           </Animated.View>
         ))}
-        <Text style={styles.countText}>Count: {count}</Text>
         <Modal
         animationType="slide"
         transparent={true}
@@ -117,7 +139,7 @@ const GameScreen = ({ gameDay }) => {
       >
         <View style={styles.modalView}>
           <View style={{width: '100%', alignItems: 'center', marginBottom: '10%'}}>
-            <Text style={{ color: 'white', fontSize: '15%'}}>Please answer the following questions.</Text>
+            <Text style={{ color: 'white', fontSize: 13}}>Please answer the following questions.</Text>
           </View>
           <Text style={styles.modalText}>1. How willing/unwilling were you in completing the task?</Text>
           <View style={styles.smileyContainer}>
@@ -172,17 +194,22 @@ const GameScreen = ({ gameDay }) => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
+    width: '100%',
+  },
+  titleCount: {
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   progressContainer: {
     height: 10,
     backgroundColor: '#ddd',
-    marginHorizontal: 10,
+    marginHorizontal: 40,
     borderRadius: 5,
     marginTop: 10,
   },
   progressBar: {
     height: '100%',
-    backgroundColor: 'blue',
+    backgroundColor: '#781374',
     borderRadius: 5,
   },
   container: {
@@ -192,14 +219,10 @@ const styles = StyleSheet.create({
   },
   item: {
     position: 'absolute',
-    backgroundColor: 'lightblue',
-    padding: 20,
-    borderRadius: 10,
   },
   countText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 10,
+    fontSize: 15,
+    marginBottom: 1,
   },
   modalView: {
     flex: 1,
@@ -227,3 +250,4 @@ const styles = StyleSheet.create({
 });
 
 export default GameScreen;
+
