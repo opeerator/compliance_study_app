@@ -4,8 +4,9 @@ import { AntDesign, FontAwesome6 } from '@expo/vector-icons';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Button } from 'react-native-paper';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 
-const GameScreen = ({ gameDay }) => {
+const GameScreen = ({ gday, onGameEnd }) => {
   const [count, setCount] = useState(0);
   const [items, setItems] = useState([]);
   const [progress, setProgress] = useState(0);
@@ -16,6 +17,33 @@ const GameScreen = ({ gameDay }) => {
   const [questionAnswers, setQuestionAnswers] = useState(Array(5).fill('')); // Array to store answers to questions
   const timerRef = useRef(null);
   const timerStarted = useRef(true); // Track if the timer has started
+  const [facing, setFacing] = useState('front');
+  const [Cview, setCview] = useState(false);
+  const [permission, requestPermission] = useCameraPermissions();
+  const [photoUri, setPhotoUri] = useState(null);
+  const cref = useRef(null)
+
+  function TakePicture() {
+    if (!permission) {
+      // Camera permissions are still loading.
+      console.log("Camera is loading!")
+    }
+  
+    if (!permission.granted) {
+      // Camera permissions are not granted yet.
+      requestPermission();
+    }
+    if (permission.granted) {
+      // permissions are there
+      setCview(true);
+    }
+  }
+
+  const HandlecView = async () => {
+    const photo = await cref.current.takePictureAsync()
+    setCview(false);
+    setPhotoUri(photo.uri);
+  }
 
   useEffect(() => {
     const fetchData = async () => {
@@ -67,7 +95,7 @@ const GameScreen = ({ gameDay }) => {
         clearInterval(timerRef.current); // Stop the game timer
         setModalVisible(true); // Show the modal
         setGameActive(false); // Stop generating items
-      }, 2000); // 2 minutes in milliseconds
+      }, 120000); // 2 minutes in milliseconds
 
       return () => {
         clearInterval(timerRef.current);
@@ -84,21 +112,37 @@ const GameScreen = ({ gameDay }) => {
     setCount(0); // Reset the count
     timerStarted.current = false; // Reset timer started flag
     setGameActive(true); // Reactivate the game
-
     try {
-      const response = await axios.post('your_backend_url/send_game_data', {
-        hash_code: hashcode,
-        game_day: gameDay,
-        clicks: count,
-        selected_items: count, // Add logic to track selected items if needed
-        total_items: items.length,
-        questions: questionAnswers, // Array of answers to questions
+      const formData = new FormData();
+      formData.append('hash_code', hashcode);
+      formData.append('game_day', gday);
+      formData.append('clicks', count);
+      formData.append('selected_items', count); // Add logic to track selected items if needed
+      formData.append('total_items', items.length);
+      formData.append('questions', questionAnswers.join(',')); // Array of answers to questions
+      if (photoUri) {
+        const filename = photoUri.split('/').pop();
+        const match = /\.(\w+)$/.exec(filename);
+        const type = match ? `image/${match[1]}` : `image`;
+        formData.append('image', {
+          uri: photoUri,
+          name: filename,
+          type
+        });
+      }
+  
+      const response = await axios.post('http://172.20.10.3:5000/send_game_data', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       });
       console.log(response.data); // Log response from the server
+      onGameEnd(); // Invoke the callback to update the status in ExperimentSchedule
     } catch (error) {
       console.error('Error sending game data:', error);
     }
   };
+  
 
   const handleItemPress = id => {
     setItems(prevItems => prevItems.filter(item => item.id !== id));
@@ -139,7 +183,21 @@ const GameScreen = ({ gameDay }) => {
           visible={modalVisible}
           onRequestClose={() => handleModalClose()}
         >
-          <View style={styles.modalView}>
+          {Cview ? (
+            <CameraView ref={cref} style={{ flex: 1, alignItems: 'center' }} facing={facing}>
+              <View style={{ flex: 1, backgroundColor: 'transparent', flexDirection: 'row', marginBottom: 60, opacity: 0.7 }}>
+                <View
+                  style={{
+                    alignSelf: 'flex-end',
+                    alignItems: 'center',
+                  }}
+                >
+                <Button style={{ width: 150, height: 50, borderWidth: 1, borderColor: 'white' }} mode="elevated" buttonColor='#781374' textColor='white' tiel onPress={HandlecView}>Capture</Button>
+                </View>
+              </View>
+            </CameraView>
+          ) : (
+            <View style={styles.modalView}>
             <View style={{width: '100%', alignItems: 'center', marginBottom: '10%'}}>
               <Text style={{ color: 'white', fontSize: 13}}>Please answer the following questions.</Text>
             </View>
@@ -209,9 +267,12 @@ const GameScreen = ({ gameDay }) => {
               ))}
             </View>
             <View style={{width: '100%', alignItems: 'center'}}>
+            <Button style={{width: '70%', marginTop: '10%'}} mode="elevated" buttonColor='#781374' textColor='white' onPress={TakePicture}>Take a selfie!</Button>
             <Button style={{width: '70%', marginTop: '10%'}} mode="elevated" buttonColor='#781374' textColor='white' onPress={handleModalClose}>Done!</Button>
             </View>
           </View>
+          )}
+
         </Modal>
       </View>
     </SafeAreaView>
