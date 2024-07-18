@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "compliance_app",
-    "slug": "compliance_app",
+    "slug": "complianceexperiment",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -15,13 +15,15 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "mirrly.app"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "mirrly.app"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -35,6 +37,18 @@
           }
         ]
       ]
+    },
+    "extra": {
+      "eas": {
+        "projectId": "c73fd08c-e5db-4dbd-8768-fa8ac7fa196a"
+      }
+    },
+    "owner": "opeeerator",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/c73fd08c-e5db-4dbd-8768-fa8ac7fa196a"
     }
   }
 }
