@@ -8,7 +8,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies
-RUN npm install -g expo/cli
+RUN npm install -g @expo/cli
 
 # Copy the rest of your application code to the container
 COPY . .
