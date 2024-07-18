@@ -41,7 +41,7 @@ const ExperimentSchedule = ({ hashcode, condition, logout}) => {
   const fetchGameDay = async () => {
     try {
       const response = await axios.post(
-        'http://172.20.10.3:5000/check_game_status',
+        'http://129.97.228.209:8443/check_game_status',
         { hash_code: hashcode }
       );
       setCurrentGameDay(response.data.current_game_day);
