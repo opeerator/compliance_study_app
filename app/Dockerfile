@@ -1,25 +1,20 @@
-# Use the official Node.js runtime as the base image
+# Use an official Node.js runtime as a parent image
 FROM node:20.13.1
 
 # Set the working directory in the container
 WORKDIR /app
 
-# Install Expo CLI globally
-RUN npm install -g expo-cli
-
-# Copy the package.json and package-lock.json into the container
-COPY package*.json ./app/
+# Copy the package.json and package-lock.json files to the container
+COPY package*.json ./
 
 # Install dependencies
-RUN npm install
+RUN npm install -g expo-cli
 
-# Copy the rest of the project files into the container
+# Copy the rest of your application code to the container
 COPY . .
 
-# Expose the port that Expo CLI uses
+# Expose port 19000 for Expo
 EXPOSE 19000
-EXPOSE 19001
-EXPOSE 19002
 
-# Start the Expo project
+# Start the Expo server
 CMD ["npx", "expo", "start", "--tunnel"]
