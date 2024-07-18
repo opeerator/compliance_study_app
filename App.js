@@ -1,20 +1,31 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, SafeAreaView, Image, StyleSheet, KeyboardAvoidingView, Platform, Dimensions } from 'react-native';
+import { View, Text, TextInput, SafeAreaView, Image, StyleSheet, KeyboardAvoidingView, Platform, Dimensions, TouchableOpacity } from 'react-native';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { PaperProvider, Button } from 'react-native-paper';
+import NetInfo from '@react-native-community/netinfo';
 import ExperimentSchedule from './ExperimentSchedule';
 
 const logoTop = require('./assets/mirrly_full_size.png');
 const logoBottom = require('./assets/Sirrl_v.png');
+const logoNoInternet = require('./assets/mirrly_full_size_greyscale.png');
 
 const App = () => {
   const [hashcode, setHashcode] = useState(null);
   const [inputHashcode, setInputHashcode] = useState('');
   const [condition, setCondition] = useState('c1'); // default condition is C1
+  const [isConnected, setIsConnected] = useState(true); // new state for internet connection status
+  const [error, seterror] = useState(null);
 
   useEffect(() => {
     checkStoredHashcode();
+    const unsubscribe = NetInfo.addEventListener(state => {
+      setIsConnected(state.isConnected);
+    });
+
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
   const checkStoredHashcode = async () => {
@@ -30,9 +41,11 @@ const App = () => {
 
   const handleInputChange = (text) => {
     setInputHashcode(text.slice(0, 8).toLowerCase());
+    seterror(null);
   };
 
   const handleManualLogin = async () => {
+    if (!isConnected) return; // prevent login if not connected
     try {
       const response = await axios.post(
         'http://172.20.10.3:5000/login',
@@ -41,13 +54,19 @@ const App = () => {
       if (response.data.message === "Valid") {
         await AsyncStorage.setItem('hashcode', inputHashcode);
         setHashcode(inputHashcode);
-        // Set the condition based on the response or some other logic
         setCondition(response.data.condition || 'c1'); // Example logic
       } else {
         console.error('Invalid hashcode');
       }
     } catch (error) {
-      console.error('Error during manual login:', error);
+      if(error.response === undefined) {
+        console.error('network error!');
+        seterror("There is a problem connecting to the server!")
+      }
+      if (error.response.status === 403 ) {
+        console.error('Participation code is not valid!');
+        seterror("Participation code is not valid!")
+      }
     }
   };
 
@@ -57,12 +76,20 @@ const App = () => {
     await AsyncStorage.removeItem('hashcode');
   };
 
+  if (!isConnected) {
+    return (
+      <SafeAreaView style={styles.noInternetContainer}>
+        <Image source={logoNoInternet} style={styles.logoTop} />
+        <Text style={styles.noInternetText}>Please make sure your device is connected to the internet</Text>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <PaperProvider>
       {hashcode ? (
         <View style={styles.container}>
-          <ExperimentSchedule hashcode={hashcode} condition={condition} />
-          {/* <Text style={{ marginBottom: '2%' }}>Logged in with {hashcode}</Text> */}
+          <ExperimentSchedule hashcode={hashcode} condition={condition} logout={removeLogin} />
           {/* <Button mode="elevated" buttonColor='#781374' textColor='white' onPress={removeLogin}>Logout</Button> */}
         </View>
       ) : (
@@ -96,6 +123,9 @@ const App = () => {
               >
                 Enter
               </Button>
+              {error && (
+              <Text style={styles.errorText}>{error}</Text>
+            )}
             </View>
           </KeyboardAvoidingView>
           <Image source={logoBottom} style={styles.logoBottom} />
@@ -106,6 +136,11 @@ const App = () => {
 };
 
 const styles = StyleSheet.create({
+  errorText: {
+    color: 'red', // Or any other color you prefer
+    fontSize: 16,
+    marginTop: 10,
+  },
   container: {
     flex: 1,
     justifyContent: 'center',
@@ -160,6 +195,17 @@ const styles = StyleSheet.create({
     resizeMode: 'contain',
     position: 'absolute',
     bottom: 20,
+  },
+  noInternetContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  noInternetText: {
+    fontSize: 20,
+    color: '#781374',
+    textAlign: 'center',
+    marginTop: 20,
   },
 });
 

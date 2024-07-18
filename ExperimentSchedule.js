@@ -5,11 +5,16 @@ import axios from 'axios';
 import GameScreen from './GameScreen';
 import { PaperProvider, Button } from 'react-native-paper';
 
-const ExperimentSchedule = ({ hashcode, condition }) => {
+
+const ExperimentSchedule = ({ hashcode, condition, logout}) => {
   const [currentGameDay, setCurrentGameDay] = useState(null);
   const [tempGameStatus, setTempGameStatus] = useState(null);
   const [videoStatus, setVideoStatus] = useState('before'); // new state to track video status
   const appState = React.useRef(AppState.currentState);
+
+  const zeroCountVideo = require('./assets/videos/mirrly_virtual_videos/zero.mp4')
+  const less5CountVideo = require('./assets/videos/mirrly_virtual_videos/five.mp4')
+  const glass = require('./assets/videos/mirrly_virtual_videos/glasses.mp4')
 
   useEffect(() => {
     const fetchData = async () => {
@@ -92,7 +97,11 @@ const ExperimentSchedule = ({ hashcode, condition }) => {
               if (status.didJustFinish) {
                 setTempGameStatus(null);
                 setVideoStatus('before');
-                setCurrentGameDay(999); //so video is disappeared after the thing
+                if(currentGameDay === 8) {
+                  setCurrentGameDay(-1);
+                } else {
+                  setCurrentGameDay(999); //so video is disappeared after the thing
+                }
               }
             }}
             shouldPlay
@@ -103,14 +112,101 @@ const ExperimentSchedule = ({ hashcode, condition }) => {
             resizeMode="contain"
           />
         );
-      } else {
+      }
+      else if ((condition === 'c2' || condition === 'c3') && videoStatus === 'zero') {
+        return (
+          <Video
+            source={zeroCountVideo}
+            style={styles.video}
+            onPlaybackStatusUpdate={(status) => {
+              if (status.didJustFinish) {
+                setTempGameStatus(null);
+                setVideoStatus('before');
+                if(currentGameDay === 8) {
+                  setCurrentGameDay(-1);
+                } else {
+                  setCurrentGameDay(999); //so video is disappeared after the thing
+                }
+              }
+            }}
+            shouldPlay
+            volume={1.0}
+            isMute={false}
+            isLooping={false}
+            ignoreSilentSwitch={'ignore'}
+            resizeMode="contain"
+          />
+        );
+      }
+      else if ((condition === 'c2' || condition === 'c3') && videoStatus === 'less5') {
+        return (
+          <Video
+            source={less5CountVideo}
+            style={styles.video}
+            onPlaybackStatusUpdate={(status) => {
+              if (status.didJustFinish) {
+                setTempGameStatus(null);
+                setVideoStatus('before');
+                if(currentGameDay === 8) {
+                  setCurrentGameDay(-1);
+                } else {
+                  setCurrentGameDay(999); //so video is disappeared after the thing
+                }
+              }
+            }}
+            shouldPlay
+            volume={1.0}
+            isMute={false}
+            isLooping={false}
+            ignoreSilentSwitch={'ignore'}
+            resizeMode="contain"
+          />
+        );
+      }
+      else if ((condition === 'c2' || condition === 'c3') && videoStatus === 'glass') {
+        return (
+          <Video
+            source={glass}
+            style={styles.video}
+            onPlaybackStatusUpdate={(status) => {
+              if (status.didJustFinish) {
+                setTempGameStatus(null);
+                setVideoStatus('before');
+                if(currentGameDay === 8) {
+                  setCurrentGameDay(-1);
+                } else {
+                  setCurrentGameDay(999); //so video is disappeared after the thing
+                }
+              }
+            }}
+            shouldPlay
+            volume={1.0}
+            isMute={false}
+            isLooping={false}
+            ignoreSilentSwitch={'ignore'}
+            resizeMode="contain"
+          />
+        );
+      }
+       else {
         if (tempGameStatus === "Start") {
           return (
             <GameScreen 
               gday={currentGameDay} 
-              onGameEnd={() => {
+              onGameEnd={(objcount, glass) => {
                 if (condition === 'c2' || condition === 'c3') {
-                  setVideoStatus('after');
+                  if (objcount === 0){
+                    setVideoStatus('zero');
+                  } else if (objcount <= 5) {
+                    setVideoStatus('less5');
+                  } else {
+                    if (glass === false) {
+                      setVideoStatus('glass');
+
+                    } else {
+                      setVideoStatus('after');
+                    }
+                  }
                 } else {
                   setTempGameStatus(null);
                   setCurrentGameDay(999); //so for c1, c4 is disappeared after the thing
@@ -132,6 +228,7 @@ const ExperimentSchedule = ({ hashcode, condition }) => {
         <>
           <Text style={styles.title}>Experiment Schedule</Text>
           <Text style={{color: 'red', fontSize: 11}}>The experiment is already done. Thank you for your participation!</Text>
+          <Button style={{ marginTop: '4%' }} mode="elevated" buttonColor='#781374' textColor='white' onPress={logout}>Logout</Button>
         </>
       ) 
     } else {
@@ -139,6 +236,7 @@ const ExperimentSchedule = ({ hashcode, condition }) => {
         <>
           <Text style={styles.title}>Experiment Schedule</Text>
           <Text style={{color: 'red'}}>Already submitted this day's game. See you tomorrow!</Text>
+          <Button style={{ marginTop: '4%' }} mode="elevated" buttonColor='#781374' textColor='white' onPress={logout}>Logout</Button>
         </>
       )
     }

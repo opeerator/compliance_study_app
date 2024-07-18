@@ -9,6 +9,8 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 const GameScreen = ({ gday, onGameEnd }) => {
   const [count, setCount] = useState(0);
   const [items, setItems] = useState([]);
+  const [totalItems, settotalItems] = useState(0)
+  const [touchCount, setTouchCount] = useState(0);
   const [progress, setProgress] = useState(0);
   const [modalVisible, setModalVisible] = useState(false);
   const [hashcode, setHashcode] = useState('');
@@ -65,17 +67,19 @@ const GameScreen = ({ gday, onGameEnd }) => {
             setItems(prevItems => prevItems.filter(item => item.id !== newItem.id));
           }, 2000), // Remove item after 2 seconds
         };
-
+  
         // Start the fade-in animation
         Animated.timing(newItem.opacity, {
           toValue: 1,
           duration: 500, // Duration of fade-in animation
           useNativeDriver: true,
         }).start();
-
+  
+        settotalItems(prevTotal => prevTotal + 1); // Use functional update
+  
         setItems(prevItems => [...prevItems, newItem]);
       }, 2000); // Adjust the time as needed
-
+  
       return () => {
         clearInterval(itemTimer);
         items.forEach(item => clearTimeout(item.timer));
@@ -109,16 +113,15 @@ const GameScreen = ({ gday, onGameEnd }) => {
   const handleModalClose = async () => {
     setModalVisible(false);
     setProgress(0); // Reset the progress
-    setCount(0); // Reset the count
     timerStarted.current = false; // Reset timer started flag
     setGameActive(true); // Reactivate the game
     try {
       const formData = new FormData();
       formData.append('hash_code', hashcode);
       formData.append('game_day', gday);
-      formData.append('clicks', count);
+      formData.append('clicks', touchCount); // Use touchCount instead of count
       formData.append('selected_items', count); // Add logic to track selected items if needed
-      formData.append('total_items', items.length);
+      formData.append('total_items', totalItems); // Use captured totalItems
       formData.append('questions', questionAnswers.join(',')); // Array of answers to questions
       if (photoUri) {
         const filename = photoUri.split('/').pop();
@@ -130,14 +133,22 @@ const GameScreen = ({ gday, onGameEnd }) => {
           type
         });
       }
-  
+      
       const response = await axios.post('http://172.20.10.3:5000/send_game_data', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
       console.log(response.data); // Log response from the server
-      onGameEnd(); // Invoke the callback to update the status in ExperimentSchedule
+      let numberObj = count;
+      setCount(0); // Reset the count
+      setTouchCount(0); // Reset the touchCount
+      settotalItems(0);
+      if (photoUri !== null) {
+        onGameEnd(numberObj, true); // Invoke the callback to update the status in ExperimentSchedule
+      } else {
+        onGameEnd(numberObj, false); // Invoke the callback to update the status in ExperimentSchedule
+      }
     } catch (error) {
       console.error('Error sending game data:', error);
     }
@@ -158,131 +169,146 @@ const GameScreen = ({ gday, onGameEnd }) => {
     setQuestionAnswers(newAnswers);
   };
 
+  const addClickCount = () => {
+    if(modalVisible === false && Cview === false) {
+      setTouchCount(prevTouchCount => prevTouchCount + 1)
+    }
+  };
+
+
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
-      <View style={styles.titleCount}>
-        <Text style={styles.countText}>Objects found: {count}</Text>
-      </View>
-      <View style={styles.progressContainer}>
-        <View style={[styles.progressBar, { width: `${progress}%` }]} />
-      </View>
-      <View style={styles.container}>
-        {items.map(item => (
-          <Animated.View
-            key={item.id}
-            style={[styles.item, { left: item.left, top: item.top, opacity: item.opacity }]}
+      <TouchableOpacity 
+        style={styles.touchableArea} 
+        onPress={addClickCount}
+        activeOpacity={1} // Ensure touch events are registered
+      >
+        <View style={styles.titleCount}>
+          <Text style={styles.countText}>Objects found: {count}</Text>
+        </View>
+        <View style={styles.progressContainer}>
+          <View style={[styles.progressBar, { width: `${progress}%` }]} />
+        </View>
+        <View style={styles.container}>
+          {items.map(item => (
+            <Animated.View
+              key={item.id}
+              style={[styles.item, { left: item.left, top: item.top, opacity: item.opacity }]}
+            >
+              <TouchableOpacity onPress={() => handleItemPress(item.id)}>
+                <AntDesign name="hearto" size={35} color="#781374" />
+              </TouchableOpacity>
+            </Animated.View>
+          ))}
+          <Modal
+            animationType="slide"
+            transparent={true}
+            visible={modalVisible}
+            onRequestClose={() => handleModalClose()}
           >
-            <TouchableOpacity onPress={() => handleItemPress(item.id)}>
-              <AntDesign name="hearto" size={35} color="#781374" />
-            </TouchableOpacity>
-          </Animated.View>
-        ))}
-        <Modal
-          animationType="slide"
-          transparent={true}
-          visible={modalVisible}
-          onRequestClose={() => handleModalClose()}
-        >
-          {Cview ? (
-            <CameraView ref={cref} style={{ flex: 1, alignItems: 'center' }} facing={facing}>
-              <View style={{ flex: 1, backgroundColor: 'transparent', flexDirection: 'row', marginBottom: 60, opacity: 0.7 }}>
-                <View
-                  style={{
-                    alignSelf: 'flex-end',
-                    alignItems: 'center',
-                  }}
-                >
-                <Button style={{ width: 150, height: 50, borderWidth: 1, borderColor: 'white' }} mode="elevated" buttonColor='#781374' textColor='white' tiel onPress={HandlecView}>Capture</Button>
+            {Cview ? (
+              <CameraView ref={cref} style={{ flex: 1, alignItems: 'center' }} facing={facing}>
+                <View style={{ flex: 1, backgroundColor: 'transparent', flexDirection: 'row', marginBottom: 60, opacity: 0.7 }}>
+                  <View
+                    style={{
+                      alignSelf: 'flex-end',
+                      alignItems: 'center',
+                    }}
+                  >
+                  <Button style={{ width: 150, height: 50, borderWidth: 1, borderColor: 'white' }} mode="elevated" buttonColor='#781374' textColor='white' tiel onPress={HandlecView}>Capture</Button>
+                  </View>
                 </View>
+              </CameraView>
+            ) : (
+              <View style={styles.modalView}>
+              <View style={{width: '100%', alignItems: 'center', marginBottom: '10%'}}>
+                <Text style={{ color: 'white', fontSize: 13}}>Please answer the following questions.</Text>
               </View>
-            </CameraView>
-          ) : (
-            <View style={styles.modalView}>
-            <View style={{width: '100%', alignItems: 'center', marginBottom: '10%'}}>
-              <Text style={{ color: 'white', fontSize: 13}}>Please answer the following questions.</Text>
+              <Text style={styles.modalText}>1. How willing/unwilling were you in completing the task?</Text>
+              <View style={styles.smileyContainer}>
+                {[...Array(5).keys()].map(index => (
+                  <TouchableOpacity key={index} onPress={() => setQuestionAnswer(0, index + 1)}>
+                    <FontAwesome6 
+                      name={q_icon_sets[index]} 
+                      size={32} 
+                      color={questionAnswers[0] === index + 1 ? '#FFD700' : 'white'} 
+                      style={styles.smileyIcon} 
+                    />
+                  </TouchableOpacity>
+                ))}
+              </View>
+              <Text style={styles.modalText}>2. How difficult/easy was it?</Text>
+              <View style={styles.smileyContainer}>
+                {[...Array(5).keys()].map(index => (
+                  <TouchableOpacity key={index} onPress={() => setQuestionAnswer(1, index + 1)}>
+                    <FontAwesome6 
+                      name={q_icon_sets[index]} 
+                      size={32} 
+                      color={questionAnswers[1] === index + 1 ? '#FFD700' : 'white'} 
+                      style={styles.smileyIcon} 
+                    />
+                  </TouchableOpacity>
+                ))}
+              </View>
+              <Text style={styles.modalText}>3. How much are you willing to continue?</Text>
+              <View style={styles.smileyContainer}>
+                {[...Array(5).keys()].map(index => (
+                  <TouchableOpacity key={index} onPress={() => setQuestionAnswer(2, index + 1)}>
+                    <FontAwesome6 
+                      name={q_icon_sets[index]} 
+                      size={32} 
+                      color={questionAnswers[2] === index + 1 ? '#FFD700' : 'white'} 
+                      style={styles.smileyIcon} 
+                    />
+                  </TouchableOpacity>
+                ))}
+              </View>
+              <Text style={styles.modalText}>4. How enjoyable was the task?</Text>
+              <View style={styles.smileyContainer}>
+                {[...Array(5).keys()].map(index => (
+                  <TouchableOpacity key={index} onPress={() => setQuestionAnswer(3, index + 1)}>
+                    <FontAwesome6 
+                      name={q_icon_sets[index]} 
+                      size={32} 
+                      color={questionAnswers[3] === index + 1 ? '#FFD700' : 'white'} 
+                      style={styles.smileyIcon} 
+                    />
+                  </TouchableOpacity>
+                ))}
+              </View>
+              <Text style={styles.modalText}>5. How engaging was the task?</Text>
+              <View style={styles.smileyContainer}>
+                {[...Array(5).keys()].map(index => (
+                  <TouchableOpacity key={index} onPress={() => setQuestionAnswer(4, index + 1)}>
+                    <FontAwesome6 
+                      name={q_icon_sets[index]} 
+                      size={32} 
+                      color={questionAnswers[4] === index + 1 ? '#FFD700' : 'white'} 
+                      style={styles.smileyIcon} 
+                    />
+                  </TouchableOpacity>
+                ))}
+              </View>
+              <View style={{width: '100%', alignItems: 'center'}}>
+              <Button style={{width: '70%', marginTop: '10%'}} mode="elevated" buttonColor='#781374' textColor='white' onPress={TakePicture}>Take a selfie!</Button>
+              <Button style={{width: '70%', marginTop: '10%'}} mode="elevated" buttonColor='#781374' textColor='white' onPress={handleModalClose}>Done!</Button>
+              </View>
             </View>
-            <Text style={styles.modalText}>1. How willing/unwilling were you in completing the task?</Text>
-            <View style={styles.smileyContainer}>
-              {[...Array(5).keys()].map(index => (
-                <TouchableOpacity key={index} onPress={() => setQuestionAnswer(0, index + 1)}>
-                  <FontAwesome6 
-                    name={q_icon_sets[index]} 
-                    size={32} 
-                    color={questionAnswers[0] === index + 1 ? '#FFD700' : 'white'} 
-                    style={styles.smileyIcon} 
-                  />
-                </TouchableOpacity>
-              ))}
-            </View>
-            <Text style={styles.modalText}>2. How difficult/easy was it?</Text>
-            <View style={styles.smileyContainer}>
-              {[...Array(5).keys()].map(index => (
-                <TouchableOpacity key={index} onPress={() => setQuestionAnswer(1, index + 1)}>
-                  <FontAwesome6 
-                    name={q_icon_sets[index]} 
-                    size={32} 
-                    color={questionAnswers[1] === index + 1 ? '#FFD700' : 'white'} 
-                    style={styles.smileyIcon} 
-                  />
-                </TouchableOpacity>
-              ))}
-            </View>
-            <Text style={styles.modalText}>3. How much are you willing to continue?</Text>
-            <View style={styles.smileyContainer}>
-              {[...Array(5).keys()].map(index => (
-                <TouchableOpacity key={index} onPress={() => setQuestionAnswer(2, index + 1)}>
-                  <FontAwesome6 
-                    name={q_icon_sets[index]} 
-                    size={32} 
-                    color={questionAnswers[2] === index + 1 ? '#FFD700' : 'white'} 
-                    style={styles.smileyIcon} 
-                  />
-                </TouchableOpacity>
-              ))}
-            </View>
-            <Text style={styles.modalText}>4. How enjoyable was the task?</Text>
-            <View style={styles.smileyContainer}>
-              {[...Array(5).keys()].map(index => (
-                <TouchableOpacity key={index} onPress={() => setQuestionAnswer(3, index + 1)}>
-                  <FontAwesome6 
-                    name={q_icon_sets[index]} 
-                    size={32} 
-                    color={questionAnswers[3] === index + 1 ? '#FFD700' : 'white'} 
-                    style={styles.smileyIcon} 
-                  />
-                </TouchableOpacity>
-              ))}
-            </View>
-            <Text style={styles.modalText}>5. How engaging was the task?</Text>
-            <View style={styles.smileyContainer}>
-              {[...Array(5).keys()].map(index => (
-                <TouchableOpacity key={index} onPress={() => setQuestionAnswer(4, index + 1)}>
-                  <FontAwesome6 
-                    name={q_icon_sets[index]} 
-                    size={32} 
-                    color={questionAnswers[4] === index + 1 ? '#FFD700' : 'white'} 
-                    style={styles.smileyIcon} 
-                  />
-                </TouchableOpacity>
-              ))}
-            </View>
-            <View style={{width: '100%', alignItems: 'center'}}>
-            <Button style={{width: '70%', marginTop: '10%'}} mode="elevated" buttonColor='#781374' textColor='white' onPress={TakePicture}>Take a selfie!</Button>
-            <Button style={{width: '70%', marginTop: '10%'}} mode="elevated" buttonColor='#781374' textColor='white' onPress={handleModalClose}>Done!</Button>
-            </View>
-          </View>
-          )}
-
-        </Modal>
-      </View>
+            )}
+          </Modal>
+        </View>
+      </TouchableOpacity>
     </SafeAreaView>
   );
-};
+};  
 
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     width: '100%',
+  },
+  touchableArea: {
+    flex: 1, // Ensure it covers the whole screen
   },
   titleCount: {
     justifyContent: 'center',
