@@ -8,7 +8,7 @@ WORKDIR /app
 RUN npm install -g expo-cli
 
 # Copy the package.json and package-lock.json into the container
-COPY package*.json ./
+COPY package*.json ./app/
 
 # Install dependencies
 RUN npm install
