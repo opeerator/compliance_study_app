@@ -8,15 +8,17 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies
-RUN npm install -g expo-cli
+RUN npm install -g expo/cli
 
 # Copy the rest of your application code to the container
 COPY . .
 
 RUN npm install
 
+RUN npm install -g @expo/ngrok@^4.1.0
 # Expose port 19000 for Expo
 EXPOSE 19000
 
+
 # Start the Expo server
-CMD ["npx", "expo", "start", "--tunnel"]
+CMD ["bash"]
