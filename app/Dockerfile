@@ -22,4 +22,4 @@ EXPOSE 19001
 EXPOSE 19002
 
 # Start the Expo project
-CMD ["expo", "start", "--tunnel"]
+CMD ["npx", "expo", "start", "--tunnel"]

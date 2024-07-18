@@ -2,8 +2,8 @@ version: '3'
 
 services:
   reactnative:
-    build:
-      context: .
+    build: ./app
+    context: .
     volumes:
       - .:/app
       - /app/node_modules
