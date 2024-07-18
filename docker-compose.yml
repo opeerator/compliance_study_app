@@ -3,7 +3,6 @@ version: '3'
 services:
   reactnative:
     build: ./app
-    context: .
     volumes:
       - .:/app
       - /app/node_modules
