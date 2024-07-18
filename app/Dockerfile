@@ -13,6 +13,8 @@ RUN npm install -g expo-cli
 # Copy the rest of your application code to the container
 COPY . .
 
+RUN npm install
+
 # Expose port 19000 for Expo
 EXPOSE 19000
 
