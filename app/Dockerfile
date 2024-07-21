@@ -21,4 +21,4 @@ EXPOSE 19000
 
 
 # Start the Expo server
-CMD ["npx", "expo", "start", "--tunnel"]
+CMD ["bash"]
