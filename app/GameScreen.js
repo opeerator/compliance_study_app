@@ -134,7 +134,7 @@ const GameScreen = ({ gday, onGameEnd }) => {
         });
       }
       
-      const response = await axios.post('http://129.97.228.209:8443/send_game_data', formData, {
+      const response = await axios.post('http://129.97.228.209:8080/send_game_data', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },

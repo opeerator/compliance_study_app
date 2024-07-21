@@ -48,7 +48,7 @@ const App = () => {
     if (!isConnected) return; // prevent login if not connected
     try {
       const response = await axios.post(
-        'http://129.97.228.209:8443/login',
+        'http://129.97.228.209:8080/login',
         { hash_code: inputHashcode }
       );
       if (response.data.message === "Valid") {
