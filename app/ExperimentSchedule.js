@@ -41,7 +41,7 @@ const ExperimentSchedule = ({ hashcode, condition, logout}) => {
   const fetchGameDay = async () => {
     try {
       const response = await axios.post(
-        'http://129.97.228.209:8080/check_game_status',
+        'http://172.20.10.3:5000/check_game_status',
         { hash_code: hashcode }
       );
       setCurrentGameDay(response.data.current_game_day);
@@ -68,9 +68,31 @@ const ExperimentSchedule = ({ hashcode, condition, logout}) => {
     return videoMapping[gameDay][status];
   };
 
+  const c2_special_first_session = require('./assets/videos/mirrly_virtual_videos/special_c1_p1.mp4')
+  const c2_special_first_session_after = require('./assets/videos/mirrly_virtual_videos/special_c1_p2.mp4')
+
   const renderGameScreen = () => {
     if (currentGameDay <= 8 && currentGameDay > 0) {
-      if ((condition === 'c2' || condition === 'c3') && videoStatus === 'before') {
+      if (condition === 'c2' && currentGameDay === 1 && videoStatus === 'before') {
+        return (
+          <Video
+            source={c2_special_first_session}
+            style={styles.video}
+            onPlaybackStatusUpdate={(status) => {
+              if (status.didJustFinish) {
+                setVideoStatus('game');
+              }
+            }}
+            shouldPlay
+            volume={1.0}
+            isMute={false}
+            isLooping={false}
+            ignoreSilentSwitch={'ignore'}
+            resizeMode="contain"
+          />
+        );
+      }
+      else if ((condition === 'c2' || condition === 'c3') && videoStatus === 'before') {
         return (
           <Video
             source={getVideoSource(currentGameDay, 'before')}
@@ -78,6 +100,30 @@ const ExperimentSchedule = ({ hashcode, condition, logout}) => {
             onPlaybackStatusUpdate={(status) => {
               if (status.didJustFinish) {
                 setVideoStatus('game');
+              }
+            }}
+            shouldPlay
+            volume={1.0}
+            isMute={false}
+            isLooping={false}
+            ignoreSilentSwitch={'ignore'}
+            resizeMode="contain"
+          />
+        );
+      } else if (condition === 'c2' && currentGameDay === 1 && videoStatus != 'before') {
+        return (
+          <Video
+            source={c2_special_first_session_after}
+            style={styles.video}
+            onPlaybackStatusUpdate={(status) => {
+              if (status.didJustFinish) {
+                setTempGameStatus(null);
+                setVideoStatus('before');
+                if(currentGameDay === 8) {
+                  setCurrentGameDay(-1);
+                } else {
+                  setCurrentGameDay(999); //so video is disappeared after the thing
+                }
               }
             }}
             shouldPlay
@@ -218,6 +264,7 @@ const ExperimentSchedule = ({ hashcode, condition, logout}) => {
           return (
             <>
               <Text style={styles.title}>Ready for today's task?</Text>
+              <Text style={styles.subtitle}>Don't forget to put on the glasses and take the selfie.</Text>
               <Button mode="elevated" buttonColor='#781374' textColor='white' onPress={startGameDay}>Start</Button>
             </>
           )
@@ -263,6 +310,11 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 20,
     marginBottom: 10,
+  },
+  subtitle: {
+    fontSize: 18,
+    marginBottom: 10,
+    color: '#781374'
   },
   video: {
     width: '100%',

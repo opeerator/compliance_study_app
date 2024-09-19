@@ -99,7 +99,7 @@ const GameScreen = ({ gday, onGameEnd }) => {
         clearInterval(timerRef.current); // Stop the game timer
         setModalVisible(true); // Show the modal
         setGameActive(false); // Stop generating items
-      }, 120000); // 2 minutes in milliseconds
+      }, 2000); // 2 minutes in milliseconds
 
       return () => {
         clearInterval(timerRef.current);
@@ -134,7 +134,7 @@ const GameScreen = ({ gday, onGameEnd }) => {
         });
       }
       
-      const response = await axios.post('http://129.97.228.209:8080/send_game_data', formData, {
+      const response = await axios.post('http://172.20.10.3:5000/send_game_data', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
