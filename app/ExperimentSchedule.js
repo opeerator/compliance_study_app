@@ -312,7 +312,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   subtitle: {
-    fontSize: 18,
+    fontSize: 14,
     marginBottom: 10,
     color: '#781374'
   },
