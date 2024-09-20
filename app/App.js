@@ -48,7 +48,7 @@ const App = () => {
     if (!isConnected) return; // prevent login if not connected
     try {
       const response = await axios.post(
-        'http://172.20.10.3:5000/login',
+        'http://129.97.228.209:8080/login',
         { hash_code: inputHashcode }
       );
       if (response.data.message === "Valid") {
@@ -90,7 +90,7 @@ const App = () => {
       {hashcode ? (
         <View style={styles.container}>
           <ExperimentSchedule hashcode={hashcode} condition={condition} logout={removeLogin} />
-          <Button mode="elevated" buttonColor='#781374' textColor='white' onPress={removeLogin}>Logout</Button>
+          {/* <Button mode="elevated" buttonColor='#781374' textColor='white' onPress={removeLogin}>Logout</Button> */}
         </View>
       ) : (
         <SafeAreaView style={styles.container}>
