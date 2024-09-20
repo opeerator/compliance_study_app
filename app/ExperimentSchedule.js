@@ -283,6 +283,7 @@ const ExperimentSchedule = ({ hashcode, condition, logout}) => {
         <>
           <Text style={styles.title}>Experiment Schedule</Text>
           <Text style={{color: 'red'}}>Already submitted this day's game. See you tomorrow!</Text>
+          <Text style={{color: '#781374'}}>** You don't need to logout unless there is a problem.</Text>
           <Button style={{ marginTop: '4%' }} mode="elevated" buttonColor='#781374' textColor='white' onPress={logout}>Logout</Button>
         </>
       )

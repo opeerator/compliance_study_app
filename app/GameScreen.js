@@ -25,6 +25,13 @@ const GameScreen = ({ gday, onGameEnd }) => {
   const [photoUri, setPhotoUri] = useState(null);
   const cref = useRef(null)
 
+  const [allQuestionsAnswered, setAllQuestionsAnswered] = useState(false); // New state to check if all questions are answered
+  useEffect(() => {
+    // Check if all questions are answered and a photo is uploaded
+    const allAnswered = questionAnswers.every(answer => answer !== '');
+    setAllQuestionsAnswered(allAnswered && photoUri !== null);
+  }, [questionAnswers, photoUri]);
+
   function TakePicture() {
     if (!permission) {
       // Camera permissions are still loading.
@@ -291,7 +298,7 @@ const GameScreen = ({ gday, onGameEnd }) => {
               </View>
               <View style={{width: '100%', alignItems: 'center'}}>
               <Button style={{width: '70%', marginTop: '10%'}} mode="elevated" buttonColor='#781374' textColor='white' onPress={TakePicture}>Take a selfie!</Button>
-              <Button style={{width: '70%', marginTop: '10%'}} mode="elevated" buttonColor='#781374' textColor='white' onPress={handleModalClose}>Done!</Button>
+              <Button style={{width: '70%', marginTop: '10%'}} mode="elevated" disabled={!allQuestionsAnswered} buttonColor={allQuestionsAnswered ? '#781374' : '#B0B0B0'} textColor='white'  onPress={handleModalClose}>Done!</Button>
               </View>
             </View>
             )}
