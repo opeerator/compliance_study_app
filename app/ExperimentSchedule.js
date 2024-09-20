@@ -110,7 +110,7 @@ const ExperimentSchedule = ({ hashcode, condition, logout}) => {
             resizeMode="contain"
           />
         );
-      } else if (condition === 'c2' && currentGameDay === 1 && videoStatus != 'before') {
+      } else if (condition === 'c2' && currentGameDay === 1 && (videoStatus === 'after' || videoStatus === 'zero' || videoStatus === 'less5' || videoStatus === 'glass')) {
         return (
           <Video
             source={c2_special_first_session_after}
