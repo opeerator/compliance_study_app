@@ -5,6 +5,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { PaperProvider, Button } from 'react-native-paper';
 import NetInfo from '@react-native-community/netinfo';
 import ExperimentSchedule from './ExperimentSchedule';
+import { LogBox } from 'react-native';
+
+LogBox.ignoreAllLogs() // Not showing logs
 
 const logoTop = require('./assets/mirrly_full_size.png');
 const logoBottom = require('./assets/Sirrl_v.png');
