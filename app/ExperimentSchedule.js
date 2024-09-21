@@ -243,7 +243,7 @@ const ExperimentSchedule = ({ hashcode, condition, logout}) => {
                 if (condition === 'c2' || condition === 'c3') {
                   if (objcount === 0){
                     setVideoStatus('zero');
-                  } else if (objcount <= 5) {
+                  } else if (objcount <= 20) {
                     setVideoStatus('less5');
                   } else {
                     if (glass === false) {
